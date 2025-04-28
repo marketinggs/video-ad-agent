@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import UploadArea from "@/components/UploadArea";
@@ -110,10 +111,12 @@ const Index = () => {
           </section>
           
           {generatedScripts && (
-            <Separator className="my-4" />
-            <section id="results-section" className="space-y-6">
-              <ScriptDisplay scripts={generatedScripts} />
-            </section>
+            <>
+              <Separator className="my-4" />
+              <section id="results-section" className="space-y-6">
+                <ScriptDisplay scripts={generatedScripts} />
+              </section>
+            </>
           )}
         </div>
       </main>
