@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
@@ -7,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Maximum video size (50MB for Gemini's limit)
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
 
 const DETAILED_ANALYSIS_PROMPT = `
 Analyze the following video advertisement in depth. Provide insights on the following aspects:
@@ -41,65 +43,72 @@ serve(async (req) => {
     }
     
     console.log("Processing video:", videoUrl);
+
+    // Fetch video data
+    console.log("Fetching video data...");
+    const videoResponse = await fetch(videoUrl);
     
+    if (!videoResponse.ok) {
+      throw new Error(`Failed to fetch video: ${videoResponse.statusText}`);
+    }
+
+    const videoData = await videoResponse.arrayBuffer();
+    console.log("Video size:", videoData.byteLength, "bytes");
+
+    // Check video size
+    if (videoData.byteLength > MAX_VIDEO_SIZE) {
+      throw new Error(`Video file too large. Maximum size is ${MAX_VIDEO_SIZE / (1024 * 1024)}MB`);
+    }
+
+    // Convert to base64
+    const base64Video = btoa(String.fromCharCode(...new Uint8Array(videoData)));
+    console.log("Video converted to base64");
+
     // Initialize Gemini
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
       console.error("Gemini API key is not configured");
-      return new Response(
-        JSON.stringify({ 
-          error: "API key not configured", 
-          usingFallback: true,
-          analysis: generateFallbackAnalysis()
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error("API key not configured");
     }
     
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
-    console.log("Analyzing video content with Gemini API using detailed prompt");
+    console.log("Analyzing video content with Gemini API");
     
     // Analyze video content
-    try {
-      const result = await model.generateContent([
-        DETAILED_ANALYSIS_PROMPT,
-        {
-          inlineData: {
-            mimeType: "video/mp4",
-            data: videoUrl
-          }
+    const result = await model.generateContent([
+      DETAILED_ANALYSIS_PROMPT,
+      {
+        inlineData: {
+          mimeType: "video/mp4",
+          data: base64Video
         }
-      ]);
+      }
+    ]);
 
-      const analysis = result.response.text();
-      console.log("Analysis complete, length:", analysis.length);
+    const analysis = result.response.text();
+    console.log("Analysis complete, length:", analysis.length);
 
-      return new Response(
-        JSON.stringify({ analysis }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (apiError) {
-      console.error("Gemini API error:", apiError);
-      
-      // Fallback response when video analysis fails
-      return new Response(
-        JSON.stringify({ 
-          analysis: generateFallbackAnalysis(),
-          error: apiError.message,
-          usingFallback: true
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    return new Response(
+      JSON.stringify({ analysis }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
     console.error('Error in analyze-video function:', error);
+    
+    // Return fallback analysis with specific error information
     return new Response(
       JSON.stringify({ 
         error: error.message,
         usingFallback: true,
-        analysis: generateFallbackAnalysis()
+        analysis: generateFallbackAnalysis(),
+        details: {
+          message: error.message,
+          type: error.name,
+          stack: error.stack
+        }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
