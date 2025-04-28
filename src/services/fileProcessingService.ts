@@ -55,11 +55,16 @@ export function getFileUrl(filePathWithBucket: string): string {
 
 /**
  * Analyzes a video file using the analyze-video edge function
+ * @param filePath The file path in storage
+ * @param isDetailedAnalysis Whether to perform a detailed analysis
+ * @returns The analysis text
  */
 export async function analyzeVideo(filePath: string): Promise<string> {
   try {
     // Get the public URL for the video
     const videoUrl = getFileUrl(filePath);
+    
+    toast.info("Analyzing video content. This may take a moment...");
     
     // Call the analyze-video edge function
     const { data, error } = await supabase.functions.invoke('analyze-video', {
@@ -68,12 +73,17 @@ export async function analyzeVideo(filePath: string): Promise<string> {
     
     if (error) throw error;
     
+    if (data.usingFallback) {
+      toast.warning("Using fallback analysis. The video may be in an unsupported format or too large.");
+    }
+    
     // Store the analysis in the database
     await storeVideoAnalysis(filePath, data.analysis);
     
     return data.analysis;
   } catch (error) {
     console.error("Video analysis error:", error);
+    toast.error(`Analysis failed: ${error.message || "Unknown error"}`);
     throw error;
   }
 }

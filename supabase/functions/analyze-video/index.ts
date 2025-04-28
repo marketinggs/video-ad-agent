@@ -8,6 +8,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const DETAILED_ANALYSIS_PROMPT = `
+Analyze the following video advertisement in depth. Provide insights on the following aspects:
+
+Visual Elements: Describe the key visual components of the ad, such as color schemes, camera angles, lighting, and overall cinematography. How do these elements contribute to the ad's message and mood?
+
+Messaging: What is the core message of the ad? How is this message communicated through both visuals and spoken words (if applicable)? Discuss how the visuals complement the spoken or written elements.
+
+Symbolism and Imagery: Identify any symbolic imagery used in the ad. What do these symbols represent, and how do they enhance the emotional or persuasive impact of the ad?
+
+Pacing and Editing: Discuss the pacing and editing style. How do these aspects affect the overall flow of the ad, and how do they influence the viewer's engagement or emotional response?
+
+Target Audience Appeal: Analyze how the visuals, messaging, and overall style of the ad appeal to its intended audience. What techniques or visual cues are used to attract and resonate with the viewer?
+
+Call to Action and Persuasion: Evaluate the effectiveness of the ad's call to action. How is it presented, and does it compel the viewer to take the desired action?
+
+Overall Impact: Assess the overall effectiveness of the ad in conveying its message, creating an emotional connection, and achieving its purpose (e.g., brand awareness, product promotion).
+
+Format your response with clear section headers for each aspect.
+`;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -30,7 +50,7 @@ serve(async (req) => {
         JSON.stringify({ 
           error: "API key not configured", 
           usingFallback: true,
-          analysis: "This is a fallback analysis since the Gemini API key is not configured. Please contact support to enable advanced video analysis."
+          analysis: generateFallbackAnalysis()
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -39,12 +59,12 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
-    console.log("Analyzing video content with Gemini API");
+    console.log("Analyzing video content with Gemini API using detailed prompt");
     
     // Analyze video content
     try {
       const result = await model.generateContent([
-        "Analyze this video content and provide a detailed description including: main topics, key points, tone, style, and target audience. Format the response in a way that can be used to generate marketing scripts.",
+        DETAILED_ANALYSIS_PROMPT,
         {
           inlineData: {
             mimeType: "video/mp4",
@@ -63,19 +83,10 @@ serve(async (req) => {
     } catch (apiError) {
       console.error("Gemini API error:", apiError);
       
-      // Fallback response for testing when video analysis fails
-      const fallbackAnalysis = 
-        "This is a fallback analysis. The video appears to be a marketing presentation " +
-        "focused on product features and benefits. The tone is professional and informative, " +
-        "targeting business professionals. The content highlights key selling points including " +
-        "product quality, ease of use, and value proposition. The video uses a combination of " +
-        "direct presentation and testimonials to build credibility.";
-      
-      console.log("Returning fallback analysis due to API error");
-      
+      // Fallback response when video analysis fails
       return new Response(
         JSON.stringify({ 
-          analysis: fallbackAnalysis,
+          analysis: generateFallbackAnalysis(),
           error: apiError.message,
           usingFallback: true
         }),
@@ -88,9 +99,39 @@ serve(async (req) => {
       JSON.stringify({ 
         error: error.message,
         usingFallback: true,
-        analysis: "There was an error processing your video. Here's a generic analysis you can use as a placeholder until the issue is resolved."
+        analysis: generateFallbackAnalysis()
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
+
+// Helper function to generate a structured fallback analysis
+function generateFallbackAnalysis() {
+  return `
+# Video Analysis
+
+## Visual Elements
+The video appears to use a professional color palette with balanced lighting and a mix of medium and close-up shots. The cinematography creates a polished, trustworthy atmosphere that enhances the brand's professional image.
+
+## Messaging
+The core message appears focused on product benefits and value proposition, presented through a combination of visual demonstrations and explanatory narration that reinforce the key selling points.
+
+## Symbolism and Imagery
+The imagery likely uses common symbols of success, quality, or innovation that resonate with viewers and create positive associations with the brand or product.
+
+## Pacing and Editing
+The editing maintains a balanced pace that keeps viewer engagement while allowing enough time for key points to register. Transitions appear to be smooth, creating a cohesive viewing experience.
+
+## Target Audience Appeal
+The visual style and presentation suggest targeting a specific demographic through relatable scenarios and pain points addressed by the product/service.
+
+## Call to Action and Persuasion
+The video likely concludes with a clear call to action that builds on the established value proposition, making next steps obvious for interested viewers.
+
+## Overall Impact
+This appears to be an effective advertisement that balances emotional appeal with practical information, likely achieving its marketing objectives.
+
+*Note: This is a fallback analysis since the video couldn't be analyzed automatically. For more accurate insights, please try again with a different video format or contact support.*
+`;
+}

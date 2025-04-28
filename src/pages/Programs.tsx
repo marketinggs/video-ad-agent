@@ -77,6 +77,7 @@ const Programs = () => {
     }
   };
 
+  // Check if any programs have PDFs
   const hasProgramsWithPdfs = programs.some(program => program.pdfs && program.pdfs.length > 0);
 
   return (
