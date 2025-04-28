@@ -1,7 +1,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ScriptCard from "./ScriptCard";
-import { ScriptVersion } from "@/data/demoData";
+import { ScriptVersion } from "@/types/scriptTypes";
 
 interface ScriptDisplayProps {
   scripts: {
@@ -11,6 +11,11 @@ interface ScriptDisplayProps {
 
 const ScriptDisplay = ({ scripts }: ScriptDisplayProps) => {
   if (!scripts) return null;
+  
+  if (!scripts.versions || !Array.isArray(scripts.versions)) {
+    console.error("Invalid scripts data:", scripts);
+    return null;
+  }
 
   return (
     <div className="w-full space-y-6">

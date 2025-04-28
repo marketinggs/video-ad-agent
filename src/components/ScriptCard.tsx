@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Card,
@@ -7,11 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { Download } from "lucide-react";
-import { ScriptVersion } from "@/data/demoData";
+import { ScriptVersion } from "@/types/scriptTypes";
 
 interface ScriptCardProps {
   version: ScriptVersion;
@@ -33,6 +31,11 @@ const ScriptCard = ({ version }: ScriptCardProps) => {
     // For demo purposes, we'll just show a toast
     toast.success(`Downloaded as ${format.toUpperCase()} file`);
   };
+
+  if (!version || !version.hooks || !Array.isArray(version.hooks)) {
+    console.error("Invalid version data:", version);
+    return null;
+  }
 
   return (
     <Card className="w-full script-transition animate-fade-in">
