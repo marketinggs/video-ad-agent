@@ -1,29 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import UploadArea from "@/components/UploadArea";
 import ProgramSelector from "@/components/ProgramSelector";
 import ModelSelector from "@/components/ModelSelector";
 import ScriptGenerator from "@/components/ScriptGenerator";
 import ScriptDisplay from "@/components/ScriptDisplay";
-import { demoPrograms, aiModels } from "@/data/demoData";
+import { aiModels } from "@/data/demoData";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
 import { GeneratedScripts, Program, AIModel } from "@/types/scriptTypes";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { user } = useAuth();
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [referenceText, setReferenceText] = useState<string | null>(null);
   const [generatedScripts, setGeneratedScripts] = useState<GeneratedScripts | null>(null);
-  const [programs, setPrograms] = useState<Program[]>(demoPrograms);
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [models] = useState<AIModel[]>(aiModels);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
   
+  useEffect(() => {
+    fetchPrograms();
+  }, [user]); // Refetch when user changes
+  
   const fetchPrograms = async () => {
+    if (!user) {
+      setPrograms([]);
+      return;
+    }
+
     setIsLoadingPrograms(true);
     try {
-      setPrograms(demoPrograms);
+      const { data, error } = await supabase
+        .from('programs')
+        .select('*');
+      
+      if (error) throw error;
+      
+      setPrograms(data || []);
     } catch (error) {
       console.error("Error fetching programs:", error);
     } finally {
@@ -93,12 +109,12 @@ const Index = () => {
             />
           </section>
           
-          {generatedScripts && <>
+          {generatedScripts && (
             <Separator className="my-4" />
             <section id="results-section" className="space-y-6">
               <ScriptDisplay scripts={generatedScripts} />
             </section>
-          </>}
+          )}
         </div>
       </main>
       
