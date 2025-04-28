@@ -16,16 +16,7 @@ const Programs = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [programs, setPrograms] = useState<Program[]>([]);
 
-  useEffect(() => {
-    fetchProgramsList();
-  }, []);
-
-  // If user is not authenticated, redirect to the auth page
-  if (!user) {
-    toast.error("Please sign in to access this page");
-    return <Navigate to="/auth" replace />;
-  }
-
+  // Define fetchProgramsList BEFORE using it in the useEffect
   const fetchProgramsList = async () => {
     try {
       const programsData = await fetchProgramsWithPdfs();
@@ -35,6 +26,16 @@ const Programs = () => {
       console.error("Error fetching programs:", error);
     }
   };
+
+  useEffect(() => {
+    fetchProgramsList();
+  }, []);
+
+  // If user is not authenticated, redirect to the auth page
+  if (!user) {
+    toast.error("Please sign in to access this page");
+    return <Navigate to="/auth" replace />;
+  }
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
