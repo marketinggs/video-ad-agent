@@ -8,12 +8,20 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { analysis, programInfo } = await req.json();
+
+    // Validate request data
+    if (!analysis || !programInfo) {
+      throw new Error('Missing required data: analysis and programInfo are required');
+    }
+
+    console.log('Generating scripts with data:', { analysis, programInfo });
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -22,7 +30,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini', // Using the correct model identifier
         messages: [
           {
             role: 'system',
@@ -62,10 +70,17 @@ serve(async (req) => {
       })
     });
 
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('OpenAI API Error:', error);
+      throw new Error(error.error?.message || 'Failed to generate scripts');
+    }
+
     const data = await response.json();
     
     if (!data.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response from OpenAI');
+      console.error('Invalid response from OpenAI:', data);
+      throw new Error('Invalid response format from OpenAI');
     }
 
     let parsedContent;
@@ -78,6 +93,7 @@ serve(async (req) => {
 
     // Validate the structure matches our ScriptVersion type
     if (!Array.isArray(parsedContent?.versions)) {
+      console.error('Invalid script format:', parsedContent);
       throw new Error('Invalid script format');
     }
 
@@ -96,8 +112,8 @@ serve(async (req) => {
     console.error('Error in generate-scripts function:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to generate scripts',
-        details: error.message 
+        error: error.message || 'Failed to generate scripts',
+        details: error.stack
       }),
       { 
         status: 500, 
