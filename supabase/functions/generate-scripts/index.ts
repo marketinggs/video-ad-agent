@@ -1,6 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,71 +24,56 @@ serve(async (req) => {
 
     console.log('Generating scripts with data:', { analysis, programInfo });
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini', // Using the correct model identifier
-        messages: [
-          {
-            role: 'system',
-            content: `You are a video script writer. Generate engaging marketing scripts in JSON format with the following structure:
-            {
-              "versions": [
-                {
-                  "length": "20",
-                  "script": "main script content",
-                  "hooks": ["hook1", "hook2", "hook3"]
-                },
-                {
-                  "length": "30",
-                  "script": "main script content",
-                  "hooks": ["hook1", "hook2", "hook3"]
-                },
-                {
-                  "length": "45",
-                  "script": "main script content",
-                  "hooks": ["hook1", "hook2", "hook3"]
-                }
-              ]
-            }`
-          },
-          {
-            role: 'user',
-            content: `Create marketing scripts based on this video analysis: ${analysis}
-                     Program Information:
-                     Name: ${programInfo.name}
-                     Description: ${programInfo.description}
-                     Target Audience: ${programInfo.targetAudience}
-                     Generate three versions: 20 seconds, 30 seconds, and 45 seconds.
-                     Include 3 different hook options for each version.
-                     IMPORTANT: Return ONLY the JSON object with no additional text or explanation.`
-          }
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('OpenAI API Error:', error);
-      throw new Error(error.error?.message || 'Failed to generate scripts');
+    // Initialize Gemini
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
+      throw new Error('Gemini API key not configured');
     }
 
-    const data = await response.json();
-    
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid response from OpenAI:', data);
-      throw new Error('Invalid response format from OpenAI');
-    }
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
+    const prompt = `Generate marketing video scripts based on this analysis: ${analysis}
+                   Program Information:
+                   Name: ${programInfo.name}
+                   Description: ${programInfo.description}
+                   Target Audience: ${programInfo.targetAudience}
+                   
+                   Generate three versions of different lengths with hooks.
+                   Format your response as a JSON object with this exact structure:
+                   {
+                     "versions": [
+                       {
+                         "length": "20",
+                         "script": "main script content",
+                         "hooks": ["hook1", "hook2", "hook3"]
+                       },
+                       {
+                         "length": "30",
+                         "script": "main script content",
+                         "hooks": ["hook1", "hook2", "hook3"]
+                       },
+                       {
+                         "length": "45",
+                         "script": "main script content",
+                         "hooks": ["hook1", "hook2", "hook3"]
+                       }
+                     ]
+                   }
+                   
+                   IMPORTANT: Return ONLY the JSON object. Do not include any additional text or explanation.`;
+
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const generatedText = response.text();
+
+    // Parse the generated text as JSON
     let parsedContent;
     try {
-      parsedContent = JSON.parse(data.choices[0].message.content);
+      parsedContent = JSON.parse(generatedText);
     } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', parseError);
+      console.error('Failed to parse Gemini response:', parseError);
+      console.log('Raw response:', generatedText);
       throw new Error('Failed to parse script data');
     }
 
@@ -108,6 +94,7 @@ serve(async (req) => {
       JSON.stringify(parsedContent),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
     console.error('Error in generate-scripts function:', error);
     return new Response(
