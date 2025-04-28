@@ -37,9 +37,7 @@ const Index = () => {
       <header className="bg-gradient-to-r from-primary/90 to-primary py-8 px-4">
         <div className="container mx-auto max-w-4xl">
           <h1 className="text-3xl md:text-4xl font-bold text-white">GrowthSchool | Video Ad Agent</h1>
-          <p className="text-white/90 mt-2">
-            Transform reference material into compelling video ad scripts for GrowthSchool programs
-          </p>
+          <p className="text-white/90 mt-2">Upload a reference, select the program, hit generate — and boom, your scripts are ready!</p>
         </div>
       </header>
       
@@ -81,7 +79,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-gray-50 py-6 px-4 border-t">
         <div className="container mx-auto max-w-4xl text-center text-sm text-gray-500">
-          <p>© 2025 GrowthSchool. Ad Alchemy Scribe - Video Ad Script Generator</p>
+          <p>© 2025 GrowthSchool - Video Ad Script Generator</p>
         </div>
       </footer>
     </div>;
