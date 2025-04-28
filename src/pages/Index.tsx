@@ -75,6 +75,13 @@ const Index = () => {
       <div className="container mx-auto max-w-4xl">
         <h1 className="text-3xl md:text-4xl font-bold text-white">GrowthSchool | Video Ad Agent</h1>
         <p className="text-white/90 mt-2">Upload a reference, select the program, hit generate — and boom, your scripts are ready!</p>
+        <Button 
+          variant="secondary" 
+          className="mt-4"
+          onClick={() => window.location.href = '/programs'}
+        >
+          Manage Programs
+        </Button>
       </div>
     </header>
     
