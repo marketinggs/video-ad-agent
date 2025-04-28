@@ -63,19 +63,25 @@ const ProgramSelector = ({ programs, onSelectProgram, isLoading = false }: Progr
           <HoverCardContent className="w-80">
             <div className="space-y-2">
               <h4 className="font-medium">{selectedProgram.name}</h4>
-              <p className="text-sm text-muted-foreground">{selectedProgram.description}</p>
-              <div className="space-y-1">
-                <h5 className="text-xs font-medium uppercase text-muted-foreground">Highlights</h5>
-                <ul className="text-sm list-disc pl-4">
-                  {selectedProgram.highlights.map((highlight, index) => (
-                    <li key={index}>{highlight}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-1">
-                <h5 className="text-xs font-medium uppercase text-muted-foreground">Target Audience</h5>
-                <p className="text-sm">{selectedProgram.targetAudience}</p>
-              </div>
+              {selectedProgram.description && (
+                <p className="text-sm text-muted-foreground">{selectedProgram.description}</p>
+              )}
+              {selectedProgram.highlights && selectedProgram.highlights.length > 0 && (
+                <div className="space-y-1">
+                  <h5 className="text-xs font-medium uppercase text-muted-foreground">Highlights</h5>
+                  <ul className="text-sm list-disc pl-4">
+                    {selectedProgram.highlights.map((highlight, index) => (
+                      <li key={index}>{highlight}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {selectedProgram.targetAudience && (
+                <div className="space-y-1">
+                  <h5 className="text-xs font-medium uppercase text-muted-foreground">Target Audience</h5>
+                  <p className="text-sm">{selectedProgram.targetAudience}</p>
+                </div>
+              )}
             </div>
           </HoverCardContent>
         )}

@@ -12,10 +12,13 @@ export interface GeneratedScripts {
 export interface Program {
   id: string;
   name: string;
-  highlights: string[];
-  sellingPoints: string[];
-  targetAudience: string;
-  description: string;
+  highlights?: string[];
+  sellingPoints?: string[];
+  targetAudience?: string;
+  description?: string;
+  created_at?: string;
+  user_id?: string;
+  pdf_path?: string;
 }
 
 export interface AIModel {
