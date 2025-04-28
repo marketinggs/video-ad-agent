@@ -51,14 +51,14 @@ const Programs = () => {
 
       if (uploadError) throw uploadError;
 
-      // Create program entry in database
+      // Create program entry in database with user_id
       const { error: dbError } = await supabase
         .from("programs")
         .insert([
           {
             name: programName,
             pdf_path: filePath,
-            user_id: user.id // Associate program with the current user
+            user_id: user.id // Include the user_id from the authenticated user
           },
         ]);
 
