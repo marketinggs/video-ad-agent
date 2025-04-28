@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,7 +30,6 @@ const Programs = () => {
     fetchProgramsList();
   }, []);
 
-  // If user is not authenticated, redirect to the auth page
   if (!user) {
     toast.error("Please sign in to access this page");
     return <Navigate to="/auth" replace />;

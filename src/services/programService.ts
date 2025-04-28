@@ -53,21 +53,22 @@ export async function fetchProgramsWithPdfs(): Promise<Program[]> {
  */
 export async function getOrCreateProgram(name: string, userId: string): Promise<string> {
   try {
-    // First check if program exists
+    // First check if program exists for this user
     const { data: existingPrograms, error: fetchError } = await supabase
       .from('programs')
       .select('id')
       .eq('name', name)
+      .eq('user_id', userId)
       .limit(1);
       
     if (fetchError) throw fetchError;
     
-    // If program exists, return its ID
+    // If program exists for this user, return its ID
     if (existingPrograms && existingPrograms.length > 0) {
       return existingPrograms[0].id;
     }
     
-    // Create new program if it doesn't exist
+    // Create new program if it doesn't exist for this user
     const { data: newProgram, error: createError } = await supabase
       .from('programs')
       .insert([{ name, user_id: userId }])
