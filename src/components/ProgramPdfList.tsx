@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { FileIcon, Trash2 } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ProgramPdf } from "@/types/scriptTypes";
 
@@ -12,14 +13,36 @@ interface ProgramPdfListProps {
 }
 
 const ProgramPdfList = ({ programId, pdfs = [], onPdfDeleted }: ProgramPdfListProps) => {
-  const handleDelete = async (pdfId: string) => {
-    const { error } = await supabase
-      .from('program_pdfs')
-      .delete()
-      .eq('id', pdfId);
+  const handleDelete = async (pdf: ProgramPdf) => {
+    try {
+      // First delete the file from storage
+      const { error: storageError } = await supabase.storage
+        .from('program-materials')
+        .remove([pdf.pdf_path]);
 
-    if (!error) {
+      if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+        toast.error('Failed to delete file from storage');
+        return;
+      }
+
+      // Then delete the database record
+      const { error: dbError } = await supabase
+        .from('program_pdfs')
+        .delete()
+        .eq('id', pdf.id);
+
+      if (dbError) {
+        console.error('Error deleting PDF record:', dbError);
+        toast.error('Failed to delete PDF record');
+        return;
+      }
+
+      toast.success('PDF deleted successfully');
       onPdfDeleted();
+    } catch (error) {
+      console.error('Error in delete operation:', error);
+      toast.error('An error occurred while deleting the PDF');
     }
   };
 
@@ -50,7 +73,7 @@ const ProgramPdfList = ({ programId, pdfs = [], onPdfDeleted }: ProgramPdfListPr
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleDelete(pdf.id)}
+                onClick={() => handleDelete(pdf)}
                 className="text-destructive hover:text-destructive/90"
               >
                 <Trash2 className="h-4 w-4" />
