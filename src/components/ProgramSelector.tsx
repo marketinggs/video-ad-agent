@@ -12,14 +12,16 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { Program } from "@/data/demoData";
+import { Program } from "@/types/scriptTypes";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProgramSelectorProps {
   programs: Program[];
   onSelectProgram: (programId: string) => void;
+  isLoading?: boolean;
 }
 
-const ProgramSelector = ({ programs, onSelectProgram }: ProgramSelectorProps) => {
+const ProgramSelector = ({ programs, onSelectProgram, isLoading = false }: ProgramSelectorProps) => {
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
 
   const handleProgramChange = (value: string) => {
@@ -27,6 +29,15 @@ const ProgramSelector = ({ programs, onSelectProgram }: ProgramSelectorProps) =>
     setSelectedProgram(program);
     onSelectProgram(value);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2 w-full">
+        <label className="text-sm font-medium">Select Program</label>
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2 w-full">

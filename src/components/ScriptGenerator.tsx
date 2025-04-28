@@ -2,20 +2,23 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { demoGeneratedScripts } from "@/data/demoData";
+import { analyzeReferenceAndGenerateScripts } from "@/services/aiService";
+import { Program, GeneratedScripts } from "@/types/scriptTypes";
 
 interface ScriptGeneratorProps {
   programId: string | null;
   modelId: string | null;
-  fileUploaded: boolean;
-  onScriptsGenerated: (scripts: any) => void;
+  referenceText: string | null;
+  programs: Program[];
+  onScriptsGenerated: (scripts: GeneratedScripts) => void;
 }
 
-const ScriptGenerator = ({ 
-  programId, 
-  modelId, 
-  fileUploaded,
-  onScriptsGenerated 
+const ScriptGenerator = ({
+  programId,
+  modelId,
+  referenceText,
+  programs,
+  onScriptsGenerated,
 }: ScriptGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -31,30 +34,40 @@ const ScriptGenerator = ({
       return;
     }
 
-    if (!fileUploaded) {
+    if (!referenceText) {
       toast.error("Please upload a reference file");
       return;
     }
 
     setIsGenerating(true);
-    
+
     try {
-      // Simulate API call with timeout
-      await new Promise((resolve) => setTimeout(resolve, 2500));
-      
-      // In a real application, we would call an API here
-      // For demo purposes, we're using mock data
-      const scripts = demoGeneratedScripts[programId];
-      
-      if (scripts) {
-        onScriptsGenerated(scripts);
-        toast.success("Scripts generated successfully!");
-      } else {
-        toast.error("Failed to generate scripts for this program");
+      // Find the selected program
+      const selectedProgram = programs.find((p) => p.id === programId);
+
+      if (!selectedProgram) {
+        throw new Error("Selected program not found");
       }
-    } catch (error) {
+
+      // Call the AI service to analyze the reference and generate scripts
+      const scripts = await analyzeReferenceAndGenerateScripts({
+        referenceText,
+        programInfo: {
+          name: selectedProgram.name,
+          description: selectedProgram.description,
+          highlights: selectedProgram.highlights,
+          sellingPoints: selectedProgram.sellingPoints,
+          targetAudience: selectedProgram.targetAudience,
+        },
+        modelId,
+      });
+
+      // Pass the generated scripts to the parent component
+      onScriptsGenerated(scripts);
+      toast.success("Scripts generated successfully!");
+    } catch (error: any) {
       console.error("Error generating scripts:", error);
-      toast.error("An error occurred while generating scripts");
+      toast.error(`An error occurred: ${error.message || "Failed to generate scripts"}`);
     } finally {
       setIsGenerating(false);
     }
@@ -62,9 +75,9 @@ const ScriptGenerator = ({
 
   return (
     <div className="w-full">
-      <Button 
-        onClick={handleGenerateScripts} 
-        disabled={isGenerating || !programId || !modelId || !fileUploaded}
+      <Button
+        onClick={handleGenerateScripts}
+        disabled={isGenerating || !programId || !modelId || !referenceText}
         className="w-full bg-primary hover:bg-primary-600 text-white"
       >
         {isGenerating ? "Generating Scripts..." : "Generate Scripts"}

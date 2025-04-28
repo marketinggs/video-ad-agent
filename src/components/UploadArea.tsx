@@ -3,14 +3,16 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { Upload } from "lucide-react";
+import { uploadFile, extractTextFromFile } from "@/services/fileProcessingService";
 
 interface UploadAreaProps {
-  onFileUpload: (file: File) => void;
+  onFileUpload: (file: File, extractedText: string) => void;
 }
 
 const UploadArea = ({ onFileUpload }: UploadAreaProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -39,21 +41,38 @@ const UploadArea = ({ onFileUpload }: UploadAreaProps) => {
     }
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     const validTypes = [
       'video/mp4',
       'text/plain',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
     
-    if (!validTypes.includes(file.type)) {
+    if (!validTypes.includes(file.type) && !file.name.endsWith('.docx')) {
       toast.error("Please upload a .mp4, .txt, or .docx file");
       return;
     }
     
     setFileName(file.name);
-    onFileUpload(file);
-    toast.success(`File "${file.name}" uploaded successfully`);
+    setIsUploading(true);
+    
+    try {
+      // Extract text content from the file
+      const extractedText = await extractTextFromFile(file);
+      
+      // Upload the file to storage
+      await uploadFile(file);
+      
+      // Pass the file and extracted text up to the parent component
+      onFileUpload(file, extractedText);
+      
+      toast.success(`File "${file.name}" uploaded and processed successfully`);
+    } catch (error) {
+      console.error("Error processing file:", error);
+      toast.error("Error processing file. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const triggerFileInput = () => {
@@ -75,7 +94,11 @@ const UploadArea = ({ onFileUpload }: UploadAreaProps) => {
       <div className="flex flex-col items-center justify-center space-y-2 text-center">
         <Upload className="h-10 w-10 text-primary mb-2" />
         <h3 className="font-medium text-lg">
-          {fileName ? `File: ${fileName}` : "Upload Reference Material"}
+          {fileName 
+            ? `File: ${fileName}` 
+            : isUploading 
+              ? "Processing file..." 
+              : "Upload Reference Material"}
         </h3>
         <p className="text-sm text-gray-500 mb-2">
           {fileName
@@ -89,8 +112,9 @@ const UploadArea = ({ onFileUpload }: UploadAreaProps) => {
             e.stopPropagation();
             triggerFileInput();
           }}
+          disabled={isUploading}
         >
-          Browse Files
+          {isUploading ? "Processing..." : "Browse Files"}
         </Button>
         <input
           ref={fileInputRef}
@@ -98,6 +122,7 @@ const UploadArea = ({ onFileUpload }: UploadAreaProps) => {
           className="hidden"
           accept=".mp4,.txt,.docx"
           onChange={handleFileChange}
+          disabled={isUploading}
         />
       </div>
     </div>
