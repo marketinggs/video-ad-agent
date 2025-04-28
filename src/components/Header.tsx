@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { User, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -32,8 +32,7 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" className="flex items-center space-x-2">
-                  <User size={16} />
-                  <span className="hidden md:inline-block">{user.email?.split('@')[0]}</span>
+                  <span>{user.email?.split('@')[0]}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
