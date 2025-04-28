@@ -7,6 +7,7 @@ import ScriptGenerator from "@/components/ScriptGenerator";
 import ScriptDisplay from "@/components/ScriptDisplay";
 import { demoPrograms, aiModels } from "@/data/demoData";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { GeneratedScripts, Program, AIModel } from "@/types/scriptTypes";
 import { supabase } from "@/services/supabaseClient";
 
