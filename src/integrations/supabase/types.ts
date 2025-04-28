@@ -9,26 +9,52 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      program_pdfs: {
+        Row: {
+          created_at: string | null
+          id: string
+          pdf_path: string
+          program_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pdf_path: string
+          program_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pdf_path?: string
+          program_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_pdfs_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       programs: {
         Row: {
           created_at: string | null
           id: string
           name: string
-          pdf_path: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
-          pdf_path?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
-          pdf_path?: string | null
           user_id?: string
         }
         Relationships: []
