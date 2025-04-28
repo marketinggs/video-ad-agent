@@ -25,7 +25,15 @@ serve(async (req) => {
     // Initialize Gemini
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
-      throw new Error("Gemini API key is not configured");
+      console.error("Gemini API key is not configured");
+      return new Response(
+        JSON.stringify({ 
+          error: "API key not configured", 
+          usingFallback: true,
+          analysis: "This is a fallback analysis since the Gemini API key is not configured. Please contact support to enable advanced video analysis."
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -34,8 +42,6 @@ serve(async (req) => {
     console.log("Analyzing video content with Gemini API");
     
     // Analyze video content
-    // Note: If the video URL format doesn't work directly with Gemini,
-    // we may need to download the video first and then process it
     try {
       const result = await model.generateContent([
         "Analyze this video content and provide a detailed description including: main topics, key points, tone, style, and target audience. Format the response in a way that can be used to generate marketing scripts.",
@@ -73,14 +79,18 @@ serve(async (req) => {
           error: apiError.message,
           usingFallback: true
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
     console.error('Error in analyze-video function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: error.message,
+        usingFallback: true,
+        analysis: "There was an error processing your video. Here's a generic analysis you can use as a placeholder until the issue is resolved."
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
