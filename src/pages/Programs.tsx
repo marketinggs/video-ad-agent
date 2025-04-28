@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,12 +8,13 @@ import { toast } from "@/components/ui/sonner";
 import Header from "@/components/Header";
 import ProgramPdfList from "@/components/ProgramPdfList";
 import { getOrCreateProgram, uploadProgramPdf, fetchProgramsWithPdfs } from "@/services/programService";
+import { Program } from "@/types/scriptTypes";
 
 const Programs = () => {
   const { user } = useAuth();
   const [programName, setProgramName] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [programs, setPrograms] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
 
   useEffect(() => {
     fetchProgramsList();
@@ -132,7 +134,7 @@ const Programs = () => {
                 <h3 className="text-lg font-semibold mb-4">{program.name}</h3>
                 <ProgramPdfList
                   programId={program.id}
-                  pdfs={program.program_pdfs}
+                  pdfs={program.pdfs}
                   onPdfDeleted={fetchProgramsList}
                 />
               </div>

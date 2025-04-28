@@ -33,7 +33,12 @@ export async function fetchProgramsWithPdfs(): Promise<Program[]> {
       sellingPoints: [],
       description: "Uploaded program",
       targetAudience: "",
-      pdfs: item.program_pdfs || []
+      pdfs: item.program_pdfs?.map(pdf => ({
+        id: pdf.id,
+        program_id: item.id,
+        pdf_path: pdf.pdf_path,
+        created_at: pdf.created_at
+      })) || []
     })) || [];
     
     return formattedPrograms;

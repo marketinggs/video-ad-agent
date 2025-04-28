@@ -3,20 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { FileIcon, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-interface ProgramPdf {
-  id: string;
-  pdf_path: string;
-  created_at: string;
-}
+import { ProgramPdf } from "@/types/scriptTypes";
 
 interface ProgramPdfListProps {
   programId: string;
-  pdfs: ProgramPdf[];
+  pdfs?: ProgramPdf[];
   onPdfDeleted: () => void;
 }
 
-const ProgramPdfList = ({ programId, pdfs, onPdfDeleted }: ProgramPdfListProps) => {
+const ProgramPdfList = ({ programId, pdfs = [], onPdfDeleted }: ProgramPdfListProps) => {
   const handleDelete = async (pdfId: string) => {
     const { error } = await supabase
       .from('program_pdfs')
@@ -28,7 +23,7 @@ const ProgramPdfList = ({ programId, pdfs, onPdfDeleted }: ProgramPdfListProps) 
     }
   };
 
-  if (!pdfs.length) {
+  if (!pdfs || pdfs.length === 0) {
     return <p className="text-sm text-muted-foreground">No PDFs uploaded yet.</p>;
   }
 
