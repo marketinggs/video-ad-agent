@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import UploadArea from "@/components/UploadArea";
@@ -11,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { GeneratedScripts, Program, AIModel } from "@/types/scriptTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { initializeApp } from "@/services/setupService";
 
 const Index = () => {
   const { user } = useAuth();
@@ -23,6 +23,8 @@ const Index = () => {
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
   
   useEffect(() => {
+    initializeApp();
+    
     fetchPrograms();
   }, [user]); // Refetch when user changes
   
@@ -40,14 +42,12 @@ const Index = () => {
       
       if (error) throw error;
       
-      // Transform the data to match our Program interface
       const formattedPrograms: Program[] = data?.map(item => ({
         id: item.id,
         name: item.name,
         pdf_path: item.pdf_path,
         created_at: item.created_at,
         user_id: item.user_id,
-        // Initialize optional fields as empty or undefined
         highlights: [],
         sellingPoints: [],
         description: "Uploaded program",
