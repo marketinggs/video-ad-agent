@@ -1,4 +1,6 @@
+
 import { ScriptVersion, GeneratedScripts } from "@/types/scriptTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 // API key should be stored in environment variables or Supabase Edge Functions
 // For demo purposes, we'll use a placeholder
