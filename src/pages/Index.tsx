@@ -43,14 +43,18 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from('programs')
-        .select('*');
+        .select(`
+          id,
+          name,
+          created_at,
+          user_id
+        `);
       
       if (error) throw error;
       
       const formattedPrograms: Program[] = data?.map(item => ({
         id: item.id,
         name: item.name,
-        pdf_path: item.pdf_path,
         created_at: item.created_at,
         user_id: item.user_id,
         highlights: [],

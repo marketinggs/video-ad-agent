@@ -18,7 +18,13 @@ export interface Program {
   description?: string;
   created_at?: string;
   user_id?: string;
-  pdf_path?: string;
+}
+
+export interface ProgramPdf {
+  id: string;
+  program_id: string;
+  pdf_path: string;
+  created_at: string;
 }
 
 export interface AIModel {
