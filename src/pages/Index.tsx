@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import UploadArea from "@/components/UploadArea";
 import ProgramSelector from "@/components/ProgramSelector";
@@ -23,8 +24,12 @@ const Index = () => {
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
   
   useEffect(() => {
-    initializeApp();
+    // Initialize app on component mount
+    const init = async () => {
+      await initializeApp();
+    };
     
+    init();
     fetchPrograms();
   }, [user]); // Refetch when user changes
   
