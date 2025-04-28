@@ -1,13 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import Header from "@/components/Header";
 import ProgramPdfList from "@/components/ProgramPdfList";
+import { getOrCreateProgram, uploadProgramPdf, fetchProgramsWithPdfs } from "@/services/programService";
 
 const Programs = () => {
   const { user } = useAuth();
@@ -16,7 +15,7 @@ const Programs = () => {
   const [programs, setPrograms] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchPrograms();
+    fetchProgramsList();
   }, []);
 
   // If user is not authenticated, redirect to the auth page
@@ -25,25 +24,14 @@ const Programs = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  const fetchPrograms = async () => {
-    const { data: programsData, error: programsError } = await supabase
-      .from('programs')
-      .select(`
-        id,
-        name,
-        program_pdfs (
-          id,
-          pdf_path,
-          created_at
-        )
-      `);
-
-    if (programsError) {
+  const fetchProgramsList = async () => {
+    try {
+      const programsData = await fetchProgramsWithPdfs();
+      setPrograms(programsData || []);
+    } catch (error) {
       toast.error("Failed to fetch programs");
-      return;
+      console.error("Error fetching programs:", error);
     }
-
-    setPrograms(programsData || []);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,65 +55,20 @@ const Programs = () => {
     setIsUploading(true);
 
     try {
-      // Check if program exists
-      let programId;
-      const { data: existingPrograms } = await supabase
-        .from('programs')
-        .select('id')
-        .eq('name', programName)
-        .limit(1);
-
-      if (existingPrograms && existingPrograms.length > 0) {
-        programId = existingPrograms[0].id;
-      } else {
-        // Create new program
-        const { data: newProgram, error: programError } = await supabase
-          .from('programs')
-          .insert([
-            {
-              name: programName,
-              user_id: user.id
-            },
-          ])
-          .select()
-          .single();
-
-        if (programError) throw programError;
-        programId = newProgram.id;
-      }
-
-      // Upload PDF to storage
-      const fileExt = "pdf";
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("program-materials")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Create program_pdf entry
-      const { error: pdfError } = await supabase
-        .from('program_pdfs')
-        .insert([
-          {
-            program_id: programId,
-            pdf_path: filePath,
-          },
-        ]);
-
-      if (pdfError) throw pdfError;
+      // Get or create program
+      const programId = await getOrCreateProgram(programName, user.id);
+      
+      // Upload the PDF and associate it with the program
+      await uploadProgramPdf(file, programId);
 
       toast.success("Program PDF uploaded successfully!");
       setProgramName("");
-      fetchPrograms();
+      fetchProgramsList();
       
       // Reset file input
       if (event.target) {
         event.target.value = "";
       }
-
     } catch (error) {
       console.error("Error uploading program:", error);
       toast.error("Failed to upload program");
@@ -190,7 +133,7 @@ const Programs = () => {
                 <ProgramPdfList
                   programId={program.id}
                   pdfs={program.program_pdfs}
-                  onPdfDeleted={fetchPrograms}
+                  onPdfDeleted={fetchProgramsList}
                 />
               </div>
             ))}

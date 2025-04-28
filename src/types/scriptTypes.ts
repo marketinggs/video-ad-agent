@@ -18,6 +18,7 @@ export interface Program {
   description?: string;
   created_at?: string;
   user_id?: string;
+  pdfs?: ProgramPdf[];
 }
 
 export interface ProgramPdf {

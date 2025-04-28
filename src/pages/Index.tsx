@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import UploadArea from "@/components/UploadArea";
@@ -9,9 +8,9 @@ import ScriptDisplay from "@/components/ScriptDisplay";
 import { aiModels } from "@/data/demoData";
 import { Separator } from "@/components/ui/separator";
 import { GeneratedScripts, Program, AIModel } from "@/types/scriptTypes";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { initializeApp } from "@/services/setupService";
+import { fetchProgramsWithPdfs } from "@/services/programService";
 
 const Index = () => {
   const { user } = useAuth();
@@ -41,28 +40,8 @@ const Index = () => {
 
     setIsLoadingPrograms(true);
     try {
-      const { data, error } = await supabase
-        .from('programs')
-        .select(`
-          id,
-          name,
-          created_at,
-          user_id
-        `);
-      
-      if (error) throw error;
-      
-      const formattedPrograms: Program[] = data?.map(item => ({
-        id: item.id,
-        name: item.name,
-        created_at: item.created_at,
-        user_id: item.user_id,
-        highlights: [],
-        sellingPoints: [],
-        description: "Uploaded program",
-        targetAudience: ""
-      })) || [];
-      
+      // Use the new service function
+      const formattedPrograms = await fetchProgramsWithPdfs();
       setPrograms(formattedPrograms);
     } catch (error) {
       console.error("Error fetching programs:", error);

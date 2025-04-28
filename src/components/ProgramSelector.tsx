@@ -39,6 +39,9 @@ const ProgramSelector = ({ programs, onSelectProgram, isLoading = false }: Progr
     );
   }
 
+  // Get unique programs to display in the dropdown
+  const uniquePrograms = programs;
+
   return (
     <div className="space-y-2 w-full">
       <label className="text-sm font-medium">Select Program</label>
@@ -50,9 +53,10 @@ const ProgramSelector = ({ programs, onSelectProgram, isLoading = false }: Progr
                 <SelectValue placeholder="Select a GrowthSchool program" />
               </SelectTrigger>
               <SelectContent>
-                {programs.map((program) => (
+                {uniquePrograms.map((program) => (
                   <SelectItem key={program.id} value={program.id}>
                     {program.name}
+                    {program.pdfs?.length > 0 && ` (${program.pdfs.length} PDF${program.pdfs.length > 1 ? 's' : ''})`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -65,6 +69,11 @@ const ProgramSelector = ({ programs, onSelectProgram, isLoading = false }: Progr
               <h4 className="font-medium">{selectedProgram.name}</h4>
               {selectedProgram.description && (
                 <p className="text-sm text-muted-foreground">{selectedProgram.description}</p>
+              )}
+              {selectedProgram.pdfs?.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {selectedProgram.pdfs.length} PDF{selectedProgram.pdfs.length > 1 ? 's' : ''} uploaded
+                </p>
               )}
               {selectedProgram.highlights && selectedProgram.highlights.length > 0 && (
                 <div className="space-y-1">
