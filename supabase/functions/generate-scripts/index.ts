@@ -26,7 +26,26 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert video script writer. Generate engaging marketing scripts based on video analysis and program information.'
+            content: `You are a video script writer. Generate engaging marketing scripts in JSON format with the following structure:
+            {
+              "versions": [
+                {
+                  "length": "20",
+                  "script": "main script content",
+                  "hooks": ["hook1", "hook2", "hook3"]
+                },
+                {
+                  "length": "30",
+                  "script": "main script content",
+                  "hooks": ["hook1", "hook2", "hook3"]
+                },
+                {
+                  "length": "45",
+                  "script": "main script content",
+                  "hooks": ["hook1", "hook2", "hook3"]
+                }
+              ]
+            }`
           },
           {
             role: 'user',
@@ -36,22 +55,54 @@ serve(async (req) => {
                      Description: ${programInfo.description}
                      Target Audience: ${programInfo.targetAudience}
                      Generate three versions: 20 seconds, 30 seconds, and 45 seconds.
-                     Include 3 different hook options for each version.`
+                     Include 3 different hook options for each version.
+                     IMPORTANT: Return ONLY the JSON object with no additional text or explanation.`
           }
         ]
       })
     });
 
     const data = await response.json();
+    
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response from OpenAI');
+    }
+
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(data.choices[0].message.content);
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', parseError);
+      throw new Error('Failed to parse script data');
+    }
+
+    // Validate the structure matches our ScriptVersion type
+    if (!Array.isArray(parsedContent?.versions)) {
+      throw new Error('Invalid script format');
+    }
+
+    // Ensure each version has the required fields
+    parsedContent.versions = parsedContent.versions.map(version => ({
+      length: version.length,
+      script: version.script,
+      hooks: Array.isArray(version.hooks) ? version.hooks.slice(0, 3) : []
+    }));
+
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(parsedContent),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in generate-scripts function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: 'Failed to generate scripts',
+        details: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });

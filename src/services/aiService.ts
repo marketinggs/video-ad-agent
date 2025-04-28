@@ -2,10 +2,6 @@
 import { ScriptVersion, GeneratedScripts } from "@/types/scriptTypes";
 import { supabase } from "@/integrations/supabase/client";
 
-// API key should be stored in environment variables or Supabase Edge Functions
-// For demo purposes, we'll use a placeholder
-const API_KEY = "your-openai-api-key";
-
 interface AnalyzeReferenceProps {
   referenceText: string;
   programInfo: {
@@ -31,9 +27,24 @@ export async function analyzeReferenceAndGenerateScripts({
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Function invocation error:", error);
+      throw new Error(error.message || 'Failed to generate scripts');
+    }
 
-    return data.choices[0].message.content;
+    if (!data?.versions || !Array.isArray(data.versions)) {
+      console.error("Invalid response structure:", data);
+      throw new Error('Invalid response format from script generation');
+    }
+
+    // Validate and format the response
+    const formattedVersions: ScriptVersion[] = data.versions.map(version => ({
+      length: version.length as "20" | "30" | "45",
+      script: version.script,
+      hooks: Array.isArray(version.hooks) ? version.hooks : []
+    }));
+
+    return { versions: formattedVersions };
   } catch (error) {
     console.error("AI Service Error:", error);
     throw error;
